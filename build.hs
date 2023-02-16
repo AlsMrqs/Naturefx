@@ -1,8 +1,9 @@
+import System.Environment
 import System.IO
 
 import Data.List
 
-index = intercalate "\n" source
+html = intercalate "\n" source
 source = 
     ["<!DOCTYPE html>"
     ,"<html>"
@@ -13,5 +14,7 @@ source =
     ,"</html>"]
 
 main :: IO ()
-main = System.IO.writeFile "index.html" index
+main = do
+    pages <- getArgs
+    mapM_ (\page -> System.IO.writeFile page html) pages
 
