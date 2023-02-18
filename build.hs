@@ -14,7 +14,5 @@ source =
     ,"</html>"]
 
 main :: IO ()
-main = do
-    pages <- getArgs
-    mapM_ (\page -> System.IO.writeFile page html) pages
+main = getArgs >>= mapM_ (`System.IO.writeFile` html) 
 
