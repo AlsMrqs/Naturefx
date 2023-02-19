@@ -1,7 +1,4 @@
-import System.Environment
-import System.IO
-
-import Data.List
+module Lambda where
 
 html = intercalate "\n" source
 source = 
@@ -13,6 +10,11 @@ source =
     ,"<body>","</body>"
     ,"</html>"]
 
+genesis :: String -> IO ()
+genesis = getArgs
+
 main :: IO ()
-main = getArgs >>= mapM_ (`System.IO.writeFile` html) 
+main = do 
+    getArgs >>= mapM_ (`System.IO.writeFile` html) 
+
 
