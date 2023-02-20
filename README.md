@@ -1,3 +1,3 @@
 # Kagepr
-text mode browser
+browser text mode
 
