@@ -2,8 +2,4 @@ import Kagepr
 
 main :: IO ()
 main = do
-
-
-
-
-putStr _page_
+    putStr $ (++"\n") _page_
