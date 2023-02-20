@@ -1,10 +1,10 @@
 module Kagepr where
 
-import System.Environment
 import System.IO
-import Data.Foldable
+import System.Environment
+
+import Prelude hiding (head,sort)
 import qualified Data.List as List
-import Prelude hiding (head)
 
 data Tree a = Root | Leaf a | Node a (Tree a) (Tree a) deriving Show
 
@@ -13,30 +13,28 @@ instance Functor Tree where
     fmap f (Leaf a) = Leaf (f a)
     fmap f _ = Root
 
--- Data.Base --
-_html_ = List.intercalate "\n" source
-source = 
-    ["<!DOCTYPE html>"
-    ,"<html>"
-    ,"<head>" ,"<title>","</title>" ,"</head>"
-    ,"<body>","</body>"
-    ,"</html>"]
--- End --
+genesis = getArgs >>= mapM_ (`System.IO.writeFile` _page_)
 
-genesis = getArgs >>= mapM_ (`System.IO.writeFile` _html_)
+_page_ = _html_
+_html_ = sort . html $ 
+    Node "\n    https://url.info\n" 
+        ((head . Leaf) "\n    ...\n") 
+        ((body . Leaf) "\n    ...\n")
 
-_page_ = page $ html $ Node "\n" (head $ Leaf "\n...\n") $ body (Leaf "\n...\n")
+-- Generic --
+seed :: [a] -> Tree [a] -> Tree [a]
+seed x = \n -> Node x n Root
+
+sort :: Tree [a] -> [a]
+sort Root         = []
+sort (Leaf x)     = x 
+sort (Node x l r) = (++) x ((++) (sort l) (sort r))
 
 -- Working on Three --
-html x = (Node "<html>") x (Leaf "</html>")
-body x = (Node "<body>") x (Leaf "</body>")
-head x = (Node "<head>") x (Leaf "</head>")
+html = \x -> (Node "<html>") (x) (Leaf "</html>")
+body = \x -> (Node "<body>") (x) (Leaf "</body>")
+head = \x -> (Node "<head>") (x) (Leaf "</head>")
 
-seed :: [Char] -> (Tree [Char] -> Tree [Char])
-seed = (\x n -> Node x n Root)
-
-page :: Tree [Char] -> [Char]
-page Root = ""
-page (Leaf a) = a
-page (Node x l r) = x ++ (page l) ++ (page r)
+url :: [Char] -> Tree [Char]
+url = (`seed` (Leaf "index.html"))
 
