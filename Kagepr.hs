@@ -2,8 +2,9 @@ module Kagepr where
 
 import System.Environment
 import System.IO
-import qualified Data.List as L
 import Data.Foldable
+import qualified Data.List as List
+import Prelude hiding (head)
 
 data Tree a = Root | Leaf a | Node a (Tree a) (Tree a) deriving Show
 
@@ -13,7 +14,7 @@ instance Functor Tree where
     fmap f _ = Root
 
 -- Data.Base --
-_html_ = L.intercalate "\n" source
+_html_ = List.intercalate "\n" source
 source = 
     ["<!DOCTYPE html>"
     ,"<html>"
@@ -24,19 +25,18 @@ source =
 
 genesis = getArgs >>= mapM_ (`System.IO.writeFile` _html_)
 
-tag x = "<" ++ x ++ ">"
+_page_ = page $ html $ Node "\n" (head $ Leaf "\n...\n") $ body (Leaf "\n...\n")
 
-page = html (Node "1" (Kagepr.head Root) (body Root))
+-- Working on Three --
+html x = (Node "<html>") x (Leaf "</html>")
+body x = (Node "<body>") x (Leaf "</body>")
+head x = (Node "<head>") x (Leaf "</head>")
 
-html x = Node "<html>" (x) (Leaf "</html>")
-body x = Node "<body>" (x) (Leaf "</body>")
-head x = Node "<head>" (x) (Leaf "</head>")
+seed :: [Char] -> (Tree [Char] -> Tree [Char])
+seed = (\x n -> Node x n Root)
 
--- Todo --
---kernel :: Tree [Char] -> Tree [Char] 
---kernel = (`Node "<!DOCTYPE html>"` Root) . ((`Node "<html>"` (Leaf "</html>"))
-
--- Todo --
--- tree :: (Functor f) => f [Char] -> Tree [Char]
--- seed :: [Char] -> Tree [Char]
+page :: Tree [Char] -> [Char]
+page Root = ""
+page (Leaf a) = a
+page (Node x l r) = x ++ (page l) ++ (page r)
 
