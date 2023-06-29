@@ -1,5 +1,4 @@
-# Kagepr
-# Matrix
+# data Naturefx = Kagepr | Matrix
 
 GHC based Operating System
 
