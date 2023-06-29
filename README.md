@@ -1,3 +1,6 @@
 # Kagepr
-browser in text mode
 
+GHC based Operating System
+
+- Browser CLi
+- Engine 2D
