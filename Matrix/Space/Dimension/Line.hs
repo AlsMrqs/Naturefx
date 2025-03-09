@@ -1,51 +1,51 @@
 module Line where
 
-data Line a = Point (Line a) a (Line a)
+data Line a = Node a (Line a) (Line a)
             | Void
 
 instance (Show a) => Show (Line a) where
-    show Void = ""
-    show (Point l x r) = show (takePoint $ Point l x r)
+    show Void = "Void"
+    show (Node a l r) = showL l ++ " (...) " ++ show a ++ " (...) " ++ showR r
+        where
+            showL Void         = "[" 
+            showL (Node x l _) = showL l ++ show x 
+            showR Void         = "]"
+            showR (Node x _ r) = show x ++ showR r
 
-fmap_ :: (a -> a) -> Line a -> Line a
-fmap_ _ Void = Void
-fmap_ f (Point l x r) = Point (fmapL f l) (f x) (fmapR f r)
+    -- double ptr insert --
+
+insert :: (Semigroup a, Eq a, Ord a) => a -> Line a -> Line a
+insert _ Void = Void
+insert k (Node x l r)
+    | k == x = let link = Node ((<>) k x) (updateL link l) (updateR link r) in link
+    | k <  x = let link = Node x (insertL (k, link) l) (updateR link r) in link   
+    | k >  x = let link = Node x (updateL link l) (insertR (k, link) r) in link
+
+type Link a = Line a
+
+updateR :: Link a -> Line a -> Line a
+updateR _    Void         = Void
+updateR link (Node x _ r) = newLink
     where
-        fmapL _ Void          = Void
-        fmapL f (Point l x r) = Point (fmapL f l) (f x) r
-        fmapR _ Void          = Void
-        fmapR f (Point l x r) = Point l (f x) (fmapR f r)
-
-point :: Line a -> Maybe a
-point Void          = Nothing
-point (Point _ x _) = Just x
-
-takePoint Void          = [] 
-takePoint (Point l x r) = (takePointL l) ++ [x] ++ (takePointR r)
+        newLink = Node x link (updateR newLink r)
+        
+updateL :: Link a -> Line a -> Line a
+updateL _    Void         = Void
+updateL link (Node x l _) = newLink
     where
-        takePointL Void          = []
-        takePointL (Point l x _) = (takePointL l) ++ [x]
-        takePointR Void          = []
-        takePointR (Point _ x r) = [x] ++ (takePointR r)
+        newLink = Node x (updateL newLink l) link
 
-insert :: (Eq a, Ord a) => Line a -> a -> Line a
-insert s@(Void)        x = Point (Void) x (Void)
-insert s@(Point l y r) x 
-    | x == y = Point l y r
-    | x >  y = Point l y (linkR r (s, x))
-    | x <  y = Point (linkL l (s, x)) y r
+insertR :: (Semigroup a, Eq a, Ord a) => (a, Link a) -> Line a -> Line a
+insertR (k, link) Void         = Node k link Void
+insertR (k, link) (Node x _ r)
+    | k == x = let newLink = Node ((<>) k x) link (updateR newLink r) in newLink
+    | k <  x = let newLink = Node k link (insertR (x, newLink) r) in newLink
+    | k >  x = let newLink = Node x link (insertR (k, newLink) r) in newLink
 
-linkR :: (Eq a, Ord a) => Line a -> (Line a, a) -> Line a
-linkR s@(Void)        (last, x) = Point (last) x (Void)
-linkR s@(Point l y r) (last, x) 
-    | x == y = Point l y r
-    | x >  y = Point l y (linkR r (s, x))
-    | x <  y = Point l x (linkR r (s, y))
-
-linkL :: (Eq a, Ord a) => Line a -> (Line a, a) -> Line a
-linkL s@(Void)        (last, x) = Point (Void) x (last)
-linkL s@(Point l y r) (last, x) 
-    | x == y = Point l y r
-    | x <  y = Point (linkL l (s, x)) y r
-    | x >  y = Point (linkL l (s, y)) x r
+insertL :: (Semigroup a, Eq a, Ord a) => (a, Link a) -> Line a -> Line a
+insertL (k, link) Void         = Node k Void link
+insertL (k, link) (Node x l _)
+    | k == x = let newLink = Node ((<>) k x) (updateL newLink l) link in newLink
+    | k <  x = let newLink = Node x (insertL (k, newLink) l) link in newLink
+    | k >  x = let newLink = Node k (insertL (x, newLink) l) link in newLink
 
