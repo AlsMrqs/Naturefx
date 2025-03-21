@@ -1,50 +1,49 @@
-module Link where
+module Coord where
 
 import Line
 import Axis
 
-import Data.List  ((\\), nub)
-import Data.Maybe (fromMaybe, isNothing)
+import Data.List    ((\\), nub)
+import Data.Maybe   (fromMaybe, isNothing)
+import Data.Bool    (bool)
 
-data Link = Link
+data Coord = Coord
     { coordinate :: Double
     , plane      :: [Object]
-    } deriving Show
+    } --deriving Show
 
-instance Eq Link where
-    (==) (Link x n) (Link a m) = (x,n) == (a,m)
+instance Show Coord where
+    show (Coord dbl pln) = "\n(" ++ show dbl ++ ")" ++ show pln
 
-    -- take (Line a) {id} content --
-takeCoordinate :: Line Link -> Maybe Double
+instance Eq Coord where
+    (==) (Coord x n) (Coord a m) = (x,n) == (a,m)
+
+takeCoordinate :: Line Coord -> Maybe Double
 takeCoordinate Void          = Nothing
 takeCoordinate (Point _ x _) = Just $ coordinate x
-    --
 
-haveObject :: Link -> Object -> Bool
-haveObject (Link _ list) obj = elem obj list
+haveObject :: Coord -> Object -> Bool
+haveObject = flip elem . plane 
 
-insertObject :: Link -> Object -> Link
-insertObject lnk@(Link n lst) obj = 
-    if elem obj lst 
-        then lnk 
-        else (Link n (obj:lst))
+insertObject :: Coord -> Object -> Coord
+insertObject lnk obj = 
+    if elem obj $ plane lnk
+        then lnk
+        else Coord (coordinate lnk) ((:) obj $ plane lnk)
 
-removeObject :: Link -> Object -> Link
-removeObject lnk@(Link n lst) obj = 
-    if elem obj lst 
-        then (Link n (lst \\ [obj]))
+removeObject :: Coord -> Object -> Coord
+removeObject lnk obj =
+    if elem obj $ plane lnk
+        then Coord (coordinate lnk) ((\\) [obj] $ plane lnk)
         else lnk
 
-merge :: Link -> Link -> Link
-merge (Link n pln) lnk = Link n (nub . (++) pln $ plane lnk)
-
-    -- Insert Link --
+    -- definir a instância necessária --
 
 type ModifyedLine a = Line a
 
-insertLink :: Line Link -> Link -> (Line Link, ModifyedLine Link)
-insertLink Void          lnk = let ln = Point Void lnk Void in (ln, ln)
-insertLink (Point l x r) lnk 
+insertCoord :: Line Coord -> Coord -> (Line Coord, ModifyedLine Coord)
+insertCoord Void          lnk = let ln = Point Void lnk Void in (ln, ln)
+insertCoord (Point l x r) lnk 
     | coordinate x == coordinate lnk = 
         if x == lnk 
             then
@@ -58,13 +57,16 @@ insertLink (Point l x r) lnk
     | coordinate x <  coordinate lnk = 
         let currPrev  = Point l1 x r1
             l1        = updateL l currPrev
-            (r1, ptr) = insertR r (currPrev, lnk) -- Here --
+            (r1, ptr) = insertR r (currPrev, lnk)
          in (currPrev, ptr)
     | coordinate x >  coordinate lnk = 
         let currPrev  = Point l1 x r1
             r1        = updateR r currPrev
             (l1, ptr) = insertL l (currPrev, lnk)
          in (currPrev, ptr)
+
+merge :: Coord -> Coord -> Coord
+merge lnk = Coord (coordinate lnk) . nub . (++) (plane lnk) . plane
 
 updateR (Void)        (newPrev) = Void
 updateR (Point l x r) (newPrev) = currPrev
@@ -78,8 +80,7 @@ updateL (Point l x r) (newPrev) = currPrev
         currPrev = Point l1 x newPrev
         l1       = updateL l currPrev
         
-        -- Here --
-insertR :: Line Link -> (Line Link, Link) -> (Line Link, Line Link)
+insertR :: Line Coord -> (Line Coord, Coord) -> (Line Coord, Line Coord)
 insertR (Void)        (newPrev, lnk) = let ln = Point newPrev lnk Void in (ln, ln)
 insertR (Point l x r) (newPrev, lnk) 
     | coordinate x == coordinate lnk = 
@@ -95,7 +96,7 @@ insertR (Point l x r) (newPrev, lnk)
             (r1, ptr) = insertR r (currPrev, x)
          in (currPrev, ptr)
 
-insertL :: Line Link -> (Line Link, Link) -> (Line Link, Line Link)
+insertL :: Line Coord -> (Line Coord, Coord) -> (Line Coord, Line Coord)
 insertL (Void)        (newPrev, lnk) = let ln = Point Void lnk newPrev in (ln, ln)
 insertL (Point l x r) (newPrev, lnk)
     | coordinate x == coordinate lnk =
@@ -111,76 +112,31 @@ insertL (Point l x r) (newPrev, lnk)
             (l1, ptr) = insertL l (currPrev, lnk)
          in (currPrev, ptr)
 
---insertLink :: Line Link -> Link -> Line Link
---insertLink Void          lnk = Point Void lnk Void
---insertLink (Point l x r) lnk 
---    | coordinate x == coordinate lnk = Point l (merge x lnk) r
---    | coordinate x <  coordinate lnk = 
---        let currPrev = Point l1 x r1
---            l1       = updateL l currPrev
---            r1       = insertR r (currPrev, lnk)
---         in currPrev
---    | coordinate x >  coordinate lnk = 
---        let currPrev = Point l1 x r1
---            r1       = updateR r currPrev
---            l1       = insertL l (currPrev, lnk)
---         in currPrev
---
---updateR (Void)        (newPrev) = Void
---updateR (Point l x r) (newPrev) = currPrev
---    where
---        currPrev = Point newPrev x r1
---        r1       = updateR r currPrev
---
---updateL (Void)        (newPrev) = Void
---updateL (Point l x r) (newPrev) = currPrev
---    where
---        currPrev = Point l1 x newPrev
---        l1       = updateL l currPrev
---        
---insertR (Void)        (newPrev, lnk) = Point newPrev lnk Void
---insertR (Point l x r) (newPrev, lnk) = currPrev
---    where
---        currPrev = Point newPrev x r1
---        r1       = insertR r (currPrev, lnk)
---        
---insertL (Void)        (newPrev, lnk) = Point Void lnk newPrev
---insertL (Point l x r) (newPrev, lnk) = currPrev
---    where
---        currPrev = Point l1 x newPrev
---        l1       = insertL l (currPrev, lnk)
+    -- data Object --
 
---P Void a Void
---let curPrev = P Void a newNext
---    newNext = P currPrev lnk Void
-
-data Object = Object (Axis Link, Axis Link, Axis Link) (Double, Double, Double) 
+data Object = Object (Axis Coord, Axis Coord, Axis Coord) (Double, Double, Double) 
 
 instance Show Object where
-    show (Object (a,b,c) (x,y,z)) = "Object " ++ show (xPoint a, yPoint b, zPoint c) ++ show (x,y,z)
+    show (Object (a,b,c) (x,y,z)) = "\n\tOBJ " ++ show (xPoint a, yPoint b, zPoint c) ++ show (x,y,z)
 
 instance Eq Object where
-    (==) (Object (a0,b0,c0) (a,b,c)) (Object (x0,y0,z0) (x,y,z)) = 
-        (a,b,c) == (x,y,z)
+    (==) (Object (a0,b0,c0) (a,b,c)) (Object (x0,y0,z0) (x,y,z)) = (a,b,c) == (x,y,z) 
         && (xPoint a0, yPoint b0, zPoint c0) == (xPoint x0, yPoint y0, zPoint z0) 
 
 xPoint = takeCoordinate . line
 yPoint = takeCoordinate . line
 zPoint = takeCoordinate . line
 
-updateObject :: Object -> (Axis Link, Axis Link, Axis Link) -> Object
+updateObject :: Object -> (Axis Coord, Axis Coord, Axis Coord) -> Object
 updateObject (Object _ (x, y, z)) (xn, yn, zn) = Object (xn, yn, zn) (x, y, z)
 
-obj_0 = Object (x0,y0,z0) (-1,0.1,2)
-x0 = X $ Point Void (Link 0 []) Void
-y0 = Y $ Point Void (Link 0 []) Void
-z0 = Z $ Point Void (Link 0 []) Void
-
-neo :: (Axis Link, Axis Link, Axis Link) -> Object -> ((Axis Link, Axis Link, Axis Link), Object)
+    -- Create a (Move) function that update Vecto Space --
+    
+neo :: (Axis Coord, Axis Coord, Axis Coord) -> Object -> ((Axis Coord, Axis Coord, Axis Coord), Object)
 neo (x0,y0,z0) obj@(Object (x,y,z) (kx, ky, kz)) =
-    let (x1, xn)    = moveX (x0, (yn, zn)) (newObject, newCoord (kx,x), obj) --(+) kx . fromMaybe 0 $ takeCoordinate . line $ x)
-        (y1, yn)    = moveY (y0, (xn, zn)) (newObject, newCoord (ky,y), obj) --(+) ky . fromMaybe 0 $ takeCoordinate . line $ y)
-        (z1, zn)    = moveZ (z0, (xn, yn)) (newObject, newCoord (kz,z), obj) --(+) kz . fromMaybe 0 $ takeCoordinate . line $ z)
+    let (x1, xn)    = moveX (x0, (yn, zn)) (newObject, newCoord (kx,x), obj) 
+        (y1, yn)    = moveY (y0, (xn, zn)) (newObject, newCoord (ky,y), obj) 
+        (z1, zn)    = moveZ (z0, (xn, yn)) (newObject, newCoord (kz,z), obj) 
         newObject   = updateObject obj (xn, yn, zn)
         newCoord    = \(a,b) -> (+) a . fromMaybe 0 $ takeCoordinate . line $ b
     in  ((x1,y1,z1), newObject)
@@ -188,34 +144,33 @@ neo (x0,y0,z0) obj@(Object (x,y,z) (kx, ky, kz)) =
 type NewAxis a = Axis a
 type NewObject = Object
 
-    -- Move Object --
-moveX :: (Axis Link, (NewAxis Link, NewAxis Link)) -> (Object, Double, Object) -> (NewAxis Link, NewAxis Link)
-moveX (x0, (yn, zn)) (newObj, xIndex, obj) =  --obj@(Object (x, y, z) (kx, ky, kz)) = 
-    let --newObj      = updateObject obj (ptr, yn, zn)
-        --xIndex      = (+) kx . fromMaybe 0 $ takeCoordinate . line $ x
-        lineX       = line x0 
+moveX :: (Axis Coord, (NewAxis Coord, NewAxis Coord)) -> (Object, Double, Object) -> (NewAxis Coord, NewAxis Coord)
+moveX (x0, (yn, zn)) (newObj, xIndex, obj) =
+    let lineX       = line x0 
         (xn, ptr)   = (\(a,b) -> (reconstructor x0 a, reconstructor x0 b))
-            . (flip insertLink $ Link xIndex [newObj]) 
+            . (flip insertCoord $ Coord xIndex [newObj]) 
             . fmap_ (flip removeObject $ obj) $ lineX
      in (xn, ptr)
 
-moveY :: (Axis Link, (NewAxis Link, NewAxis Link)) -> (Object, Double, Object) -> (NewAxis Link, NewAxis Link)
-moveY (y0, (xn, zn)) (newObj, yIndex, obj) = -- obj@(Object (x, y, z) (kx, ky, kz)) = 
-    let --newObj      = updateObject obj (xn, ptr, zn)
-        --yIndex      = (+) ky . fromMaybe 0 $ takeCoordinate . line $ y
-        lineY       = line y0 
+moveY :: (Axis Coord, (NewAxis Coord, NewAxis Coord)) -> (Object, Double, Object) -> (NewAxis Coord, NewAxis Coord)
+moveY (y0, (xn, zn)) (newObj, yIndex, obj) =
+    let lineY       = line y0 
         (yn, ptr)   = (\(a,b) -> (reconstructor y0 a, reconstructor y0 b))
-            . (flip insertLink $ Link yIndex [newObj])
+            . (flip insertCoord $ Coord yIndex [newObj])
             . fmap_ (flip removeObject $ obj) $ lineY
      in (yn, ptr)
 
-moveZ :: (Axis Link, (NewAxis Link, NewAxis Link)) -> (Object, Double, Object) -> (NewAxis Link, NewAxis Link)
-moveZ (z0, (xn, yn)) (newObj, zIndex, obj) = --obj@(Object (x, y, z) (kx, ky, kz)) = 
-    let --newObj      = updateObject obj (xn, yn, ptr)
-        --zIndex      = (+) kz . fromMaybe 0 $ takeCoordinate . line $ z
-        lineZ       = line z0 
+moveZ :: (Axis Coord, (NewAxis Coord, NewAxis Coord)) -> (Object, Double, Object) -> (NewAxis Coord, NewAxis Coord)
+moveZ (z0, (xn, yn)) (newObj, zIndex, obj) =
+    let lineZ       = line z0 
         (zn, ptr)   = (\(a,b) -> (reconstructor z0 a, reconstructor z0 b))
-            . (flip insertLink $ Link zIndex [newObj]) 
+            . (flip insertCoord $ Coord zIndex [newObj]) 
             . fmap_ (flip removeObject $ obj) $ lineZ
      in (zn, ptr)
+
+    -- test examples --
+obj_0 = Object (x0,y0,z0) (-0.1,0.01,0.2)
+x0 = X $ Point Void (Coord 0 []) Void
+y0 = Y $ Point Void (Coord 0 []) Void
+z0 = Z $ Point Void (Coord 0 []) Void
 

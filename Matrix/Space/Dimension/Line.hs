@@ -1,7 +1,8 @@
 module Line where
 
-data Line a = Node a (Line a) (Line a)
-            | Void
+import Control.Parallel.Strategies
+
+data Line a = Void | Node a (Line a) (Line a)
 
 instance (Show a) => Show (Line a) where
     show Void = "Void"
@@ -13,6 +14,13 @@ instance (Show a) => Show (Line a) where
             showR (Node x _ r) = show x ++ showR r
 
     -- double ptr insert --
+
+--insert :: (Semigroup a, Eq a, Ord a) => a -> Line a -> Line a
+--insert _ Void = Void
+--insert k (Node x l r)
+--    | k == x = let link = Node ((<>) k x) (updateL link l) (updateR link r) in link
+--    | k <  x = let link = Node x (insertL (k, link) l) (updateR link r) in link   
+--    | k >  x = let link = Node x (updateL link l) (insertR (k, link) r) in link
 
 insert :: (Semigroup a, Eq a, Ord a) => a -> Line a -> Line a
 insert _ Void = Void

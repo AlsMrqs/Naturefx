@@ -3,15 +3,14 @@ module Universe where
 import qualified DBMS as DBMS
 import Line
 import Axis
+import Space    (Point)
 
 import Data.List    (nub)
-
-type Point  = (Double, Double, Double)
-type Energy = (Double, Double, Double)
 
 data Properties = Properties 
     { energy :: Energy 
     , others :: [Char] } deriving Show
+ -- , mass   :: double } deriving Show
 
 instance Eq Properties where 
     (==) a b = (energy a, others a) == (energy b, others b)
@@ -21,7 +20,7 @@ data Object = Object
     , properties :: Properties } deriving Show
 
 instance Eq Object where 
-    (==) a b = (point a, properties a) == (point b, properties b)
+    (==) a b = (point a) == (point b)
 
 instance Ord Object where
     (<)  a b = point a < point b
@@ -45,19 +44,25 @@ instance Ord Coord where
 instance Semigroup Coord where
     (<>) (Coord c0 p0) (Coord c1 p1) = Coord c0 (nub $ p0 ++ p1)
 
-    -- Examples --
-x0 = X (Node (Coord 0 []) Void Void)
-c0 = Coord 0.0 [Object (0.0,0.0,0.0) (Properties (0.2,0.2,0.2) "")] 
-c1 = Coord 0.1 [Object (0.1,0.1,0.1) (Properties (0.1,0.1,0.1) "")]
+type Energy = (Double, Double, Double)
 
-data Space a = Space (Axis a, Axis a, Axis a)
+move :: Object -> Object
+move obj =
+    let (x,y,z) = point $ obj
+        (a,b,c) = energy . properties $ obj
+     in Object (reposition (x+a,y+b,z+c)) . Properties (redirection (x+a,y+b,z+c) (a,b,c)) . others . properties $ obj
 
-    -- todo --
--- we have (3) axis
--- this defines an space
--- we need a DBMS of objects
--- spaces will interact with it
+redirection :: Point -> Energy -> Energy
+redirection (x,y,z) (kx,ky,kz)
+    | x > 0.5 || x < (-0.5) = (-kx,ky,kz)
+    | y > 0.5 || y < (-0.5) = (kx,-ky,kz)
+    | z > 0.5 || z < (-0.5) = (kx,ky,-kz)
+    | otherwise         = (kx,ky,kz)
 
--- data Space a = Space (Axis a, Axis a, Axis a) Database
-
+reposition :: Point -> Point
+reposition (x,y,z) = 
+    let newX | x > 0.5 = 0.5 | x < (-0.5) = (-0.5) | otherwise = x
+        newY | y > 0.5 = 0.5 | y < (-0.5) = (-0.5) | otherwise = y
+        newZ | z > 0.5 = 0.5 | z < (-0.5) = (-0.5) | otherwise = z
+     in (newX, newY, newZ)
 

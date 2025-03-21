@@ -6,6 +6,10 @@ data Tree a = Node a (Tree a) (Tree a)
             | Empty
     deriving Show
 
+toList :: (Ord a) => Tree a -> [a]
+toList Empty = []
+toList (Node x l r) = (toList l) ++ [x] ++ (toList r)
+
 find :: (Eq a, Ord a) => a -> Tree a -> Maybe a
 find _ (Empty)      = Nothing
 find k (Node x l r)  
