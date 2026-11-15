@@ -1,0 +1,56 @@
+cabal-version:      3.0
+name:               Space-Structure
+version:            0.1.0.0
+-- synopsis:
+-- description:
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             naturefx
+maintainer:         alsmrqs@outlook.com
+-- copyright:
+category:           Graphics
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:  
+        MyLib,
+        Structure.Graph,
+        Structure.BFS,
+        -- Structure.Generator,
+        -- Structure.Conversor,
+        Utils.Generator,
+        Utils.Conversor,
+        Renderer,
+        Space,
+        Math,
+        Universe,
+        Virtual
+    -- other-modules:
+    -- other-extensions:
+    build-depends:    base ^>=4.18.3.0,
+        OpenGL,
+        GLUT,
+        time,
+        random,
+        containers,
+        mtl
+    hs-source-dirs:   src
+    default-language: Haskell2010
+
+test-suite Space-Structure-test
+    import:           warnings
+    default-language: Haskell2010
+    -- other-modules:
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.18.3.0,
+        Space-Structure
