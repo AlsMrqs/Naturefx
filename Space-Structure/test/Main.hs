@@ -1,10 +1,12 @@
 module Main (main) where
 
 -- Graphics
-import qualified Space as Space
-import qualified Renderer as Renderer
+import qualified Renderer
+import qualified Launcher
+import qualified Space
 
 main :: IO ()
-main = Renderer.start
+-- main = Renderer.start
+main = Launcher.start
 
 
